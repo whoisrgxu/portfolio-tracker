@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
@@ -6,6 +6,8 @@ import requests
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+import finnhub
+
 
 app = FastAPI(title="Portfolio API")
 
@@ -66,17 +68,51 @@ def root():
     return {"message": "Welcome to the Portfolio API"}
 
 # Example endpoint to get stock quotes
+# Should batch requests in production? Look at twelvedata docs to see if they support batch requests
+# https://twelvedata.com/docs#price
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+# API_KEY = os.getenv("QUOTE_API_KEY")
+# @app.get("/quote")
+# def get_quote(symbol: str):
+#     # Example with Twelve Data
+#     url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={API_KEY}"
+#     r = requests.get(url)
+#     data = r.json()
+#     return {
+#         "symbol": symbol,
+#         "price": float(data["price"]),
+#     }
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
+finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
 @app.get("/quote")
 def get_quote(symbol: str):
-    # Example with Twelve Data
-    url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={API_KEY}"
-    r = requests.get(url)
-    data = r.json()
-    return {
-        "symbol": symbol,
-        "price": float(data["price"]),
-    }
+    upper_symbol = symbol.upper()
+    try:
+        data = finnhub_client.quote(upper_symbol)
+        return {
+            "symbol": upper_symbol,
+            "price": data.get("c"),
+            "day_change": data.get("d"),
+            "day_change_percent": data.get("dp"),
+        }
+    except Exception as e:
+        print("Finnhub quote error:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch quote data")
+
+@app.get("/search/{symbol}")
+def search_symbol(symbol: str):
+    try:
+        data = finnhub_client.symbol_lookup(symbol)
+        results = [
+            {
+            "symbol": item["symbol"],
+            "description": item["description"],
+            }
+            for item in data.get("result", [])[:1]
+        ]
+        return results
+    except Exception as e:
+        print("Error during symbol lookup:", e)
+        return {"error": "Failed to fetch symbol data from Finnhub."}

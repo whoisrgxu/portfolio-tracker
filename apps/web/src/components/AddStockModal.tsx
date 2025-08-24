@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Stock } from './Dashboard';
+import { Stock as StockObj } from '../utils/Stock';
 
 interface AddStockModalProps {
   isOpen: boolean;
@@ -12,18 +13,13 @@ interface AddStockModalProps {
 }
 
 // Mock stock data for search suggestions
-const stockSuggestions = [
-  { symbol: 'AAPL', name: 'Apple Inc.', currentPrice: 173.50 },
-  { symbol: 'MSFT', name: 'Microsoft Corporation', currentPrice: 338.50 },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', currentPrice: 140.85 },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', currentPrice: 127.74 },
-  { symbol: 'TSLA', name: 'Tesla Inc.', currentPrice: 248.50 },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', currentPrice: 875.30 },
-  { symbol: 'META', name: 'Meta Platforms Inc.', currentPrice: 296.42 },
-  { symbol: 'NFLX', name: 'Netflix Inc.', currentPrice: 432.11 },
-  { symbol: 'AMD', name: 'Advanced Micro Devices', currentPrice: 142.68 },
-  { symbol: 'CRM', name: 'Salesforce Inc.', currentPrice: 215.30 }
-];
+type StockSuggestion = {
+  symbol: string;
+  name: string;
+  currentPrice: number;
+};
+
+const stockSuggestions: StockSuggestion[] = [];
 
 export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProps) {
   const [symbol, setSymbol] = useState('');
@@ -31,21 +27,28 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
   const [shares, setShares] = useState('');
   const [averagePrice, setAveragePrice] = useState('');
   const [currentPrice, setCurrentPrice] = useState('');
-  const [dayChange, setDayChange] = useState('');
-  const [dayChangePercent, setDayChangePercent] = useState('');
+  // const [dayChange, setDayChange] = useState('');
+  // const [dayChangePercent, setDayChangePercent] = useState('');
   const [suggestions, setSuggestions] = useState<typeof stockSuggestions>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleSymbolChange = (value: string) => {
-    setSymbol(value.toUpperCase());
-    
+  const handleSymbolConfirmed = (value: string) => {
+    // setSymbol(value.toUpperCase());
     if (value.length > 0) {
-      const filtered = stockSuggestions.filter(stock => 
-        stock.symbol.toLowerCase().includes(value.toLowerCase()) ||
-        stock.name.toLowerCase().includes(value.toLowerCase())
-      );
-      setSuggestions(filtered);
-      setShowSuggestions(true);
+      // fetch stock info from API  
+      let stock = new StockObj(value);
+      stock.fetchAll().then(() => {
+        if (stock.info && stock.price) {
+          setSuggestions([{symbol: stock.symbol, name: stock.info.description, currentPrice: stock.price}]);
+          setShowSuggestions(true);
+        } else {
+          alert("Stock symbol not found.");
+        }
+      });
+      // const filtered = stockSuggestions.filter(stock => 
+      //   stock.symbol.toLowerCase().includes(value.toLowerCase()) ||
+      //   stock.name.toLowerCase().includes(value.toLowerCase())
+      // );
     } else {
       setShowSuggestions(false);
     }
@@ -60,8 +63,8 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     // Generate mock day change data
     const mockDayChange = (Math.random() - 0.5) * 10; // Random change between -5 and +5
     const mockDayChangePercent = (mockDayChange / suggestion.currentPrice) * 100;
-    setDayChange(mockDayChange.toFixed(2));
-    setDayChangePercent(mockDayChangePercent.toFixed(2));
+    // setDayChange(mockDayChange.toFixed(2));
+    // setDayChangePercent(mockDayChangePercent.toFixed(2));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,8 +80,8 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
       shares: parseFloat(shares),
       averagePrice: parseFloat(averagePrice),
       currentPrice: parseFloat(currentPrice),
-      dayChange: parseFloat(dayChange) || 0,
-      dayChangePercent: parseFloat(dayChangePercent) || 0,
+      dayChange: 0, // Default value for dayChange
+      dayChangePercent: 0, // Default value for dayChangePercent
     });
 
     // Reset form
@@ -87,8 +90,8 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     setShares('');
     setAveragePrice('');
     setCurrentPrice('');
-    setDayChange('');
-    setDayChangePercent('');
+    // setDayChange('');
+    // setDayChangePercent('');
     setShowSuggestions(false);
     
     onClose();
@@ -101,8 +104,8 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     setShares('');
     setAveragePrice('');
     setCurrentPrice('');
-    setDayChange('');
-    setDayChangePercent('');
+    // setDayChange('');
+    // setDayChangePercent('');
     setShowSuggestions(false);
     onClose();
   };
@@ -119,13 +122,28 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2 relative">
             <Label htmlFor="symbol">Stock Symbol</Label>
-            <Input
+            <div className="flex items-center">
+              <Input
               id="symbol"
               placeholder="e.g., AAPL"
               value={symbol}
-              onChange={(e) => handleSymbolChange(e.target.value)}
+              onChange={(e) => setSymbol(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSymbolConfirmed(symbol);
+                }
+              }}
               required
-            />
+              />
+              <Button
+              type="button"
+              onClick={() => handleSymbolConfirmed(symbol)}
+              className="ml-2"
+              >
+              ↵
+              </Button>
+            </div>
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
                 {suggestions.map((suggestion) => (
@@ -197,7 +215,7 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          {/* <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dayChange">Day Change ($)</Label>
               <Input
@@ -208,9 +226,9 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
                 value={dayChange}
                 onChange={(e) => setDayChange(e.target.value)}
               />
-            </div>
+            </div> */}
             
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="dayChangePercent">Day Change (%)</Label>
               <Input
                 id="dayChangePercent"
@@ -220,8 +238,8 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
                 value={dayChangePercent}
                 onChange={(e) => setDayChangePercent(e.target.value)}
               />
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
           
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
