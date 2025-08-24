@@ -1,0 +1,18 @@
+{
+  "name": "portfolio-tracker",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "pnpm --filter @app/web dev",
+    "dev:api": "pnpm --filter @app/api dev",
+    "api:spec": "curl -s http://localhost:8000/openapi.json -o openapi.json",
+    "api:types": "openapi-typescript openapi.json -o packages/shared/api-types.ts",
+    "api:gen": "pnpm api:spec && pnpm api:types"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.9.1"
+  }
+}
