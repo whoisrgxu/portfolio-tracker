@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
+import requests
+from dotenv import load_dotenv
+import os
+from pathlib import Path
 
 app = FastAPI(title="Portfolio API")
 
@@ -60,3 +64,19 @@ def update_holding(holding_id: str, h: HoldingIn):
 @app.get("/")
 def root():
     return {"message": "Welcome to the Portfolio API"}
+
+# Example endpoint to get stock quotes
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+@app.get("/quote")
+def get_quote(symbol: str):
+    # Example with Twelve Data
+    url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={API_KEY}"
+    r = requests.get(url)
+    data = r.json()
+    return {
+        "symbol": symbol,
+        "price": float(data["price"]),
+    }
