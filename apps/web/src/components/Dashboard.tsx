@@ -24,6 +24,7 @@ import { PortfolioOverview } from './PortfolioOverview';
 import { HoldingsTable } from './HoldingsTable';
 import { PerformanceChart } from './PerformanceChart';
 import { AddStockModal } from './AddStockModal';
+import { LoginModal } from './LoginModal';
 
 export interface Stock {
   id: string;
@@ -261,6 +262,8 @@ export function Dashboard() {
         onClose={() => setIsAddStockModalOpen(false)}
         onAddStock={handleAddStock}
       />
+      {/* Placeholder to avoid errors */}
+      <LoginModal isOpen={false} onClose={() => {}} onLogin={(email, password) => {}} /> 
     </div>
   );
 }

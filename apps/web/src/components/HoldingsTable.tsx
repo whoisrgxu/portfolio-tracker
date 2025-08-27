@@ -136,7 +136,7 @@ export function HoldingsTable({ stocks, onRemoveStock }: HoldingsTableProps) {
           <div className="text-center py-8">
             <p className="text-muted-foreground">No stocks in your portfolio yet.</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Click the "Add Stock" button to get started.
+              Click the "Add Holding" button to get started.
             </p>
           </div>
         )}
