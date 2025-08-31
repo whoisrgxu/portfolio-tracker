@@ -20,11 +20,12 @@ app.add_middleware(
 )
 
 # Routers
-from routes import holdings, quotes, health
+from routes import quotes, holdings, health
 
-app.include_router(holdings.router, tags=["Holdings"])
-app.include_router(quotes.router, tags=["Quotes"])
-app.include_router(health.router, tags=["Health"])
+app.include_router(holdings.router, prefix="/holdings", tags=["Holdings"])
+app.include_router(quotes.router, prefix="/quotes", tags=["Quotes"])
+app.include_router(health.router, prefix="/health", tags=["Health"])
+
 
 # from fastapi import FastAPI, HTTPException
 # from fastapi.middleware.cors import CORSMiddleware

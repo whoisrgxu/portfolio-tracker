@@ -15,7 +15,7 @@ export class Stock {
 
   async fetchInfo(): Promise<void> {
     try {
-      const res = await fetch(`${this.baseUrl}/search/${this.symbol}`);
+      const res = await fetch(`${this.baseUrl}/quotes/search/${this.symbol}`);
       if (!res.ok) throw new Error("Failed to fetch info");
       const data = await res.json();
       console.log("Fetched stock info:", data);
@@ -27,7 +27,7 @@ export class Stock {
 
   async fetchPrice(): Promise<void> {
     try {
-      const res = await fetch(`${this.baseUrl}/quote?symbol=${this.symbol}`);
+      const res = await fetch(`${this.baseUrl}/quotes?symbol=${this.symbol}`);
       if (!res.ok) throw new Error("Failed to fetch price");
       const data = await res.json();
       this.price = data.price;

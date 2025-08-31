@@ -21,6 +21,11 @@ import {
   History,
   Bell
 } from 'lucide-react';
+import {SignUpModal} from "./SignUpModal";
+import {supabase}  from "../lib/supabase";
+import { LoginModal } from './LoginModal';
+import {login} from "../auth/login";
+import {signUp} from "../auth/signup";
 
 interface NavigationProps {
   activeTab: string;
@@ -30,6 +35,9 @@ interface NavigationProps {
 export function Navigation({ activeTab, onTabChange }: NavigationProps) {
   // Mock authentication state - in a real app this would come from auth context/state
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  // Login or Register modal state
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [user] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -43,15 +51,25 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
     { id: 'history', label: 'History', icon: History },
   ];
 
-  const handleLogin = () => {
-    // Mock login - in a real app this would trigger actual authentication
+  const handleLogin = async (email, password) => {
+    setLoginModalOpen(true);
     setIsAuthenticated(true);
+  };
+
+  const handleSignUpClick = () => {
+    setRegisterModalOpen(true);
   };
 
   const handleLogout = () => {
     // Mock logout - in a real app this would clear auth state
     setIsAuthenticated(false);
   };
+  // const onSignUp = async (email: string, password: string) => {
+  //   // Handle sign up logic here
+
+  //   console.log('Sign up with:', email, password);
+  //   // setIsAuthenticated(true);
+  // };
 
   const AuthenticatedMenu = () => (
     <div className="flex items-center gap-4">
@@ -104,13 +122,14 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
       <Button variant="ghost" size="sm" onClick={handleLogin}>
         Login
       </Button>
-      <Button size="sm" onClick={handleLogin}>
+      <Button size="sm" onClick={handleSignUpClick}>
         Register
       </Button>
     </div>
   );
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         {/* Logo */}
@@ -190,5 +209,16 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
         </div>
       </div>
     </header>
+    <SignUpModal
+      isOpen={registerModalOpen}
+      onClose={() => setRegisterModalOpen(false)}
+        // You can hook into Supabase or your API here
+    />
+    <LoginModal
+      isOpen={loginModalOpen}
+      onClose={() => setLoginModalOpen(false)}
+        // You can hook into Supabase or your API here
+    />    
+    </>
   );
 }

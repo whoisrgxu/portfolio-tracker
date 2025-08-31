@@ -9,34 +9,38 @@ import {
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import {login} from '../auth/login';
+import { signUp } from '../auth/signup';
 
-interface LoginModalProps {
+interface SignUpModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export function SignUpModal({ isOpen, onClose}: SignUpModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password || password !== confirm) return;
 
-    const { user, error } = await login(email, password);
-    console.log(user, error);
-    if (error) alert(error);
-    else alert(`Welcome back, ${user?.email}`);
-
+    const { data, error } = await signUp(email, password);
+    if (error) {
+      alert("Sign-up failed: " + error.message);
+    } else {
+      alert("Check your email for confirmation.");
+    }
     setEmail('');
     setPassword('');
+    setConfirm('');
     onClose();
   };
 
   const handleClose = () => {
     setEmail('');
     setPassword('');
+    setConfirm('');
     onClose();
   };
 
@@ -44,9 +48,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="!max-w-[400px] !w-full rounded-lg p-6">
         <DialogHeader>
-          <DialogTitle>Login</DialogTitle>
+          <DialogTitle>Sign Up</DialogTitle>
           <DialogDescription>
-            Enter your email and password to access your account.
+            Create an account to start tracking your portfolio.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -74,11 +78,23 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="confirm">Confirm Password</Label>
+            <Input
+              id="confirm"
+              type="password"
+              placeholder="••••••••"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+            />
+          </div>
+
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">Login</Button>
+            <Button type="submit">Sign Up</Button>
           </div>
         </form>
       </DialogContent>
