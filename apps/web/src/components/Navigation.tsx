@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
@@ -22,10 +22,8 @@ import {
   Bell
 } from 'lucide-react';
 import {SignUpModal} from "./SignUpModal";
-import {supabase}  from "../lib/supabase";
 import { LoginModal } from './LoginModal';
-import {login} from "../auth/login";
-import {signUp} from "../auth/signup";
+import { getCurrentUser, logout } from '../auth/login';
 
 interface NavigationProps {
   activeTab: string;
@@ -38,11 +36,31 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
   // Login or Register modal state
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [user] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'
-  });
+  const [displayName, setDisplayName] = useState<string | undefined>("");
+  const [email, setEmail] = useState<string | undefined>("");
+  
+  useEffect(() => {
+    const checkSession = async () => {
+      const { user } = await getCurrentUser();
+      if (user) {
+        setDisplayName(user.user_metadata.display_name ?? "User");
+        setEmail(user.email);
+        setIsAuthenticated(true);
+      }
+    };
+    checkSession();
+  }, []);
+
+  const handleLoginSuccess = async () => {
+    const { user } = await getCurrentUser();
+    if (user) {
+      setIsAuthenticated(true);
+      setDisplayName(user.user_metadata.display_name ?? "User");
+      setEmail(user.email);
+    }
+  };
+
+  const avatar: string = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face';
 
   const navigationTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -51,25 +69,18 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
     { id: 'history', label: 'History', icon: History },
   ];
 
-  const handleLogin = async (email, password) => {
+  const handleLogin = ()=> {
     setLoginModalOpen(true);
-    setIsAuthenticated(true);
   };
 
   const handleSignUpClick = () => {
     setRegisterModalOpen(true);
   };
 
-  const handleLogout = () => {
-    // Mock logout - in a real app this would clear auth state
+  const handleLogout = async() => {
+    await logout();
     setIsAuthenticated(false);
   };
-  // const onSignUp = async (email: string, password: string) => {
-  //   // Handle sign up logic here
-
-  //   console.log('Sign up with:', email, password);
-  //   // setIsAuthenticated(true);
-  // };
 
   const AuthenticatedMenu = () => (
     <div className="flex items-center gap-4">
@@ -84,17 +95,17 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <AvatarImage src={avatar} alt={displayName} />
+              <AvatarFallback>{displayName?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <p className="text-sm font-medium leading-none">{displayName}</p>
               <p className="text-xs leading-none text-muted-foreground">
-                {user.email}
+                {email}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -217,8 +228,8 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
     <LoginModal
       isOpen={loginModalOpen}
       onClose={() => setLoginModalOpen(false)}
-        // You can hook into Supabase or your API here
-    />    
+      onLoginSuccess={handleLoginSuccess}
+    />
     </>
   );
 }

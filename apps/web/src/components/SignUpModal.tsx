@@ -20,12 +20,13 @@ export function SignUpModal({ isOpen, onClose}: SignUpModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [displayName, setDisplayName] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || password !== confirm) return;
 
-    const { data, error } = await signUp(email, password);
+    const { data, error } = await signUp(email, password, displayName);
     if (error) {
       alert("Sign-up failed: " + error.message);
     } else {
@@ -34,6 +35,7 @@ export function SignUpModal({ isOpen, onClose}: SignUpModalProps) {
     setEmail('');
     setPassword('');
     setConfirm('');
+    setDisplayName('');
     onClose();
   };
 
@@ -41,6 +43,7 @@ export function SignUpModal({ isOpen, onClose}: SignUpModalProps) {
     setEmail('');
     setPassword('');
     setConfirm('');
+    setDisplayName('');
     onClose();
   };
 
@@ -54,6 +57,17 @@ export function SignUpModal({ isOpen, onClose}: SignUpModalProps) {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="displayName">User Name</Label>
+            <Input
+              id="displayName"
+              type="text"
+              placeholder="Your Name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              required
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

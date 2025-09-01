@@ -14,9 +14,10 @@ import {login} from '../auth/login';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginSuccess: () => void;
 }
 
-export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -26,9 +27,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
     const { user, error } = await login(email, password);
     console.log(user, error);
+    if (user) onLoginSuccess();
     if (error) alert(error);
-    else alert(`Welcome back, ${user?.email}`);
-
     setEmail('');
     setPassword('');
     onClose();
