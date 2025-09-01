@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger 
 } from './ui/dropdown-menu';
 import { MoreHorizontal, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
-import { Stock } from './Dashboard';
+import { Stock } from '../Types/StockHoldingsInfo';
 
 interface HoldingsTableProps {
   stocks: Stock[];

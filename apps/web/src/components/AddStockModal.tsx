@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Stock } from './Dashboard';
-import { Stock as StockObj } from '../utils/Stock';
+import { Stock } from '../Types/StockHoldingsInfo';
+import { StockInfoService as StockObj } from '../utils/Stock';
 
 interface AddStockModalProps {
   isOpen: boolean;
@@ -73,6 +73,7 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     if (!symbol || !name || !shares || !averagePrice || !currentPrice) {
       return;
     }
+    console.log("Adding stock:", {symbol, name, shares, averagePrice, currentPrice});
 
     onAddStock({
       symbol,
@@ -95,6 +96,7 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     setShowSuggestions(false);
     
     onClose();
+    console.log("Stock added and modal closed.");
   };
 
   const handleClose = () => {
