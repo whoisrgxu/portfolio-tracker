@@ -11,6 +11,8 @@ import { AddStockModal } from './AddStockModal';
 import { getCurrentUser } from '../auth/login';
 import { Stock } from '../Types/StockHoldingsInfo';
 import {StockHoldingsInfoByUser} from '../utils/StockHoldingsInfoByUser';
+import UserHoldingsService from '../utils/UserHolding';
+import { supabase } from '../lib/supabase';
 
 export interface PortfolioData {
   totalValue: number;
@@ -99,49 +101,82 @@ export interface PortfolioData {
 // };
 
 export function Dashboard() {
-  const [portfolioData, setPortfolioData] = useState<PortfolioData | undefined>(undefined);
+  const [portfolioData, setPortfolioData] = useState<PortfolioData | undefined>({
+    totalValue: 0,
+    totalCost: 0,
+    totalReturn: 0,
+    totalReturnPercent: 0,
+    dayChange: 0,
+    dayChangePercent: 0,
+    stocks: []
+  });
   const [isAddStockModalOpen, setIsAddStockModalOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [stocks, setStocks] = useState<Stock[]>([]);
 
   // On component mount, check if user is logged in and get their userId
   useEffect(() => {
-    // get user id from auth context/session
-    const fetchUserId = async() => {
-      const {user, error} = await getCurrentUser();
-      if (user) {
-        setUserId(user.id);
-      }else {
+    const fetchUser = async () => {
+      const { user, error } = await getCurrentUser();
+      if (!user) {
         setUserId(null);
-        console.error("Error fetching user:", error);
+        return;
       }
+      setUserId(user.id);
     };
-    fetchUserId();
+
+    fetchUser();
+  }, []);
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      
+      if (session?.user) {
+        setUserId(session.user.id);
+
+        const tempStocks = await StockHoldingsInfoByUser(session.user.id);
+        setStocks(tempStocks);
+      } else {
+        setUserId(null);
+        setStocks([]); // Clear holdings on logout
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   // Whenever userId changes (i.e., user logs in), we can fetch their holdings
   useEffect(() => {
-    const fetchStocks = async () => { 
-      if (userId) {
-        console.log("You can now use this userId:", userId);
+    if (!userId) {
+      console.warn("Waiting for userId before fetching holdings...");
+      return;
+    }
+
+    const fetchStocks = async () => {
+      try {
         const tempStocks = await StockHoldingsInfoByUser(userId);
-        
-        if (tempStocks.length !== 0) {
-          setStocks(tempStocks);
-        }
+        console.log("Stocks fetched for user:", tempStocks);
+        setStocks(tempStocks);
+      } catch (err) {
+        console.error("Failed to fetch stocks:", err);
       }
     };
+
     fetchStocks();
   }, [userId]);
 
-  const handleAddStock = (newStock: Omit<Stock, 'id' | 'marketValue' | 'totalReturn' | 'totalReturnPercent'>) => {
+
+  const handleAddStock = async(newStock: Omit<Stock, 'id' | 'marketValue' | 'totalReturn' | 'totalReturnPercent'>) => {
     const completeNewStock: Stock = {
       ...newStock,
       id: Date.now().toString(),
       marketValue: newStock.shares * newStock.currentPrice,
       totalReturn: (newStock.currentPrice - newStock.averagePrice) * newStock.shares,
       totalReturnPercent: ((newStock.currentPrice - newStock.averagePrice) / newStock.averagePrice) * 100
-  };
+    };
 
     const updatedStocks = [...stocks, completeNewStock];
     const newTotalValue = updatedStocks.reduce((sum, s) => sum + s.marketValue, 0);
@@ -152,6 +187,10 @@ export function Dashboard() {
     const newDayChangePercent = (newDayChange / (newTotalValue - newDayChange)) * 100;
     console.log("updatedStocks:", updatedStocks);
     setStocks(updatedStocks);
+
+    const userHoldingsService = new UserHoldingsService(userId!);
+
+    await userHoldingsService.addUserHolding(newStock);
 
     setPortfolioData({
       ...portfolioData,

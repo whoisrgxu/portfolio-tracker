@@ -12,17 +12,16 @@ export async function login(email: string, password: string) {
 }
 
 export async function getCurrentUser() {
-  const { data, error } = await supabase.auth.getUser();
+  const { data: { session }, error } = await supabase.auth.getSession();
 
-  if (error) {
-    return { user: null, error: error.message };
+  if (error || !session?.user) {
+    return { user: null, error: 'No session or user found' };
   }
 
-  return { user: data.user, error: null };
+  return { user: session.user, error: null };
 }
 export const logout = async () => {
   const { error } = await supabase.auth.signOut();
-
   if (error) {
     console.error("Logout error:", error.message);
   } else {
