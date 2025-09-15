@@ -32,8 +32,8 @@ export class StockInfoService {
       if (!res.ok) throw new Error("Failed to fetch price");
       const data = await res.json();
       this.price = data.price;
-      this.dayChange = data.change;
-      this.dayChangePercent = data.changePercent;
+      this.dayChange = data.day_change;
+      this.dayChangePercent = data.day_change_percent;
     } catch (error) {
       console.error("Error fetching stock price:", error);
     }

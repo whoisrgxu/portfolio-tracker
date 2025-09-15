@@ -127,15 +127,16 @@ export function Dashboard() {
 
     fetchUser();
   }, []);
+
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event);
       
       if (session?.user) {
         setUserId(session.user.id);
-
-        const tempStocks = await StockHoldingsInfoByUser(session.user.id);
-        setStocks(tempStocks);
+        // const tempStocks = await StockHoldingsInfoByUser(session.user.id);
+        // setStocks(tempStocks);
+        // setPortfolioData(getPortfolioData(tempStocks));
       } else {
         setUserId(null);
         setStocks([]); // Clear holdings on logout
@@ -160,6 +161,7 @@ export function Dashboard() {
         const tempStocks = await StockHoldingsInfoByUser(userId);
         console.log("Stocks fetched for user:", tempStocks);
         setStocks(tempStocks);
+        setPortfolioData(getPortfolioData(tempStocks));
       } catch (err) {
         console.error("Failed to fetch stocks:", err);
       }
@@ -168,6 +170,24 @@ export function Dashboard() {
     fetchStocks();
   }, [userId]);
 
+const getPortfolioData = (stocks: Stock[]): PortfolioData => {
+  const totalValue = stocks.reduce((sum, s) => sum + s.marketValue, 0);
+  const totalCost = stocks.reduce((sum, s) => sum + s.averagePrice * s.shares, 0);
+  const totalReturn = totalValue - totalCost;
+  const totalReturnPercent = totalCost > 0 ? (totalReturn / totalCost) * 100 : 0;
+  const dayChange = stocks.reduce((sum, s) => sum + s.dayChange, 0);
+  const dayChangePercent = (totalValue - dayChange) > 0 ? (dayChange / (totalValue - dayChange)) * 100 : 0;
+
+  return {
+    totalValue,
+    totalCost,
+    totalReturn,
+    totalReturnPercent,
+    dayChange,
+    dayChangePercent,
+    stocks
+  };
+};
 
   const handleAddStock = async(newStock: Omit<Stock, 'id' | 'marketValue' | 'totalReturn' | 'totalReturnPercent'>) => {
     const completeNewStock: Stock = {

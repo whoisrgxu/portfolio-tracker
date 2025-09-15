@@ -32,7 +32,7 @@ class UserHoldingsService {
     }
 
     async removeUserHolding(holdingId: string) {
-        const response = await fetch(`/api/holdings/${holdingId}`, {
+        const response = await fetch(`api/holdings/${holdingId}`, {
             method: 'DELETE',
         });
         if (!response.ok) {
@@ -42,7 +42,7 @@ class UserHoldingsService {
     }
 
     async updateUserHolding(holdingId: string, updates: { shares?: number; avgCost?: number; currentPrice?: number; dayChange?: number; dayChangePercent?: number; }) {
-        const response = await fetch(`/api/holdings/${holdingId}`, {
+        const response = await fetch(`api/holdings/${holdingId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ class UserHoldingsService {
     }
 
     async getUserHolding(holdingId: string) {
-        const response = await fetch(`/api/holdings/${holdingId}`);
+        const response = await fetch(`api/holdings/${holdingId}`);
         if (!response.ok) {
             throw new Error('Failed to fetch user holding');
         }
