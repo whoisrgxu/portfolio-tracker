@@ -3,7 +3,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
+from routes import portfolio
 
+import time
+time.sleep(12)  # Between requests
 # Load env variables
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -25,6 +28,9 @@ from routes import quotes, holdings, health
 app.include_router(holdings.router, prefix="/holdings", tags=["Holdings"])
 app.include_router(quotes.router, prefix="/quotes", tags=["Quotes"])
 app.include_router(health.router, prefix="/health", tags=["Health"])
+app.include_router(portfolio.router, prefix="/portfolio")
+
+
 
 
 # from fastapi import FastAPI, HTTPException

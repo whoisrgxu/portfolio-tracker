@@ -284,13 +284,13 @@ const getPortfolioData = (stocks: Stock[]): PortfolioData => {
           <HoldingsTable stocks={stocks} onRemoveStock={handleRemoveStock} />
         </TabsContent>
 
-        {/* <TabsContent value="performance" className="space-y-6">
+        <TabsContent value="performance" className="space-y-6">
           <PerformanceChart portfolioData={portfolioData!} />
-        </TabsContent> */}
+        </TabsContent>
 
         <TabsContent value="allocation" className="space-y-6">
           <Card>
-            {/* <CardHeader>
+            <CardHeader>
               <CardTitle>Portfolio Allocation</CardTitle>
               <CardDescription>
                 Breakdown of your portfolio by individual holdings
@@ -318,7 +318,7 @@ const getPortfolioData = (stocks: Stock[]): PortfolioData => {
                   </div>
                 ))}
               </div>
-            </CardContent> */}
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

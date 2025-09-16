@@ -76,7 +76,7 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     console.log("Adding stock:", {symbol, name, shares, averagePrice, currentPrice});
 
     onAddStock({
-      symbol,
+      symbol: symbol.toUpperCase(),
       name,
       shares: parseFloat(shares),
       averagePrice: parseFloat(averagePrice),
