@@ -1,5 +1,5 @@
 {
-    "name": "financial-portfolio-tracker",
+    "name": "@app/web",
     "version": "0.1.0",
     "private": true,
     "dependencies": {

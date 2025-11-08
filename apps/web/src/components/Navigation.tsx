@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
@@ -28,11 +28,13 @@ import { getCurrentUser, logout } from '../auth/login';
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  isAuthenticated: boolean;
+  onAuthChange: () => void;
+  onLoginClick?: number;
+  onSignUpClick?: number;
 }
 
-export function Navigation({ activeTab, onTabChange }: NavigationProps) {
-  // Mock authentication state - in a real app this would come from auth context/state
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+export function Navigation({ activeTab, onTabChange, isAuthenticated, onAuthChange, onLoginClick, onSignUpClick }: NavigationProps) {
   // Login or Register modal state
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -45,19 +47,29 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
       if (user) {
         setDisplayName(user.user_metadata.display_name ?? "User");
         setEmail(user.email);
-        setIsAuthenticated(true);
       }
     };
-    checkSession();
-  }, []);
+    if (isAuthenticated) {
+      checkSession();
+    }
+  }, [isAuthenticated]);
+
+  // Handle external login/signup triggers
+  useEffect(() => {
+    if (onLoginClick && onLoginClick > 0) {
+      setLoginModalOpen(true);
+    }
+  }, [onLoginClick]);
+
+  useEffect(() => {
+    if (onSignUpClick && onSignUpClick > 0) {
+      setRegisterModalOpen(true);
+    }
+  }, [onSignUpClick]);
 
   const handleLoginSuccess = async () => {
-    const { user } = await getCurrentUser();
-    if (user) {
-      setIsAuthenticated(true);
-      setDisplayName(user.user_metadata.display_name ?? "User");
-      setEmail(user.email);
-    }
+    setLoginModalOpen(false);
+    onAuthChange(); // Refresh authentication state
   };
 
   const avatar: string = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face';
@@ -79,7 +91,7 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
 
   const handleLogout = async() => {
     await logout();
-    setIsAuthenticated(false);
+    onAuthChange(); // Refresh authentication state
   };
 
   const AuthenticatedMenu = () => (
