@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
 from routes import portfolio
+from services.live_prices import price_stream_manager
 
 import time
 time.sleep(12)  # Between requests
@@ -23,12 +24,24 @@ app.add_middleware(
 )
 
 # Routers
-from routes import quotes, holdings, health
+from routes import quotes, holdings, health, stream
 
 app.include_router(holdings.router, prefix="/holdings", tags=["Holdings"])
 app.include_router(quotes.router, prefix="/quotes", tags=["Quotes"])
 app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(portfolio.router, prefix="/portfolio")
+app.include_router(stream.router, prefix="/stream", tags=["Stream"])
+
+
+@app.on_event("startup")
+async def start_streaming():
+    # Spawn the Finnhub stream bridge as soon as the API process is ready.
+    await price_stream_manager.start()
+
+
+@app.on_event("shutdown")
+async def stop_streaming():
+    await price_stream_manager.stop()
 
 
 

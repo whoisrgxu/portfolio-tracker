@@ -13,6 +13,7 @@ import { Stock } from '../Types/StockHoldingsInfo';
 import {StockHoldingsInfoByUser} from '../utils/StockHoldingsInfoByUser';
 import UserHoldingsService from '../utils/UserHolding';
 import { supabase } from '../lib/supabase';
+import { useLivePrices } from '../hooks/useLivePrices';
 
 export interface PortfolioData {
   totalValue: number;
@@ -113,6 +114,10 @@ export function Dashboard() {
   const [isAddStockModalOpen, setIsAddStockModalOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const livePrices = useLivePrices(
+    stocks.map((stock) => stock.symbol),
+    { enabled: stocks.length > 0 }
+  );
 
   // On component mount, check if user is logged in and get their userId
   useEffect(() => {
@@ -161,7 +166,6 @@ export function Dashboard() {
         const tempStocks = await StockHoldingsInfoByUser(userId);
         console.log("Stocks fetched for user:", tempStocks);
         setStocks(tempStocks);
-        setPortfolioData(getPortfolioData(tempStocks));
       } catch (err) {
         console.error("Failed to fetch stocks:", err);
       }
@@ -189,6 +193,45 @@ const getPortfolioData = (stocks: Stock[]): PortfolioData => {
   };
 };
 
+  useEffect(() => {
+    if (!stocks.length || Object.keys(livePrices).length === 0) {
+      return;
+    }
+
+    setStocks((prevStocks) => {
+      let hasChanges = false;
+      const nextStocks = prevStocks.map((stock) => {
+        const latest = livePrices[stock.symbol];
+        if (!latest || latest.price === stock.currentPrice) {
+          return stock;
+        }
+
+        hasChanges = true;
+        const currentPrice = latest.price;
+        const marketValue = currentPrice * stock.shares;
+        const totalReturn = (currentPrice - stock.averagePrice) * stock.shares;
+        const totalReturnPercent =
+          stock.averagePrice > 0
+            ? ((currentPrice - stock.averagePrice) / stock.averagePrice) * 100
+            : 0;
+
+        return {
+          ...stock,
+          currentPrice,
+          marketValue,
+          totalReturn,
+          totalReturnPercent,
+        };
+      });
+
+      return hasChanges ? nextStocks : prevStocks;
+    });
+  }, [livePrices, stocks.length]);
+
+  useEffect(() => {
+    setPortfolioData(getPortfolioData(stocks));
+  }, [stocks]);
+
   const handleAddStock = async(newStock: Omit<Stock, 'id' | 'marketValue' | 'totalReturn' | 'totalReturnPercent'>) => {
     const completeNewStock: Stock = {
       ...newStock,
@@ -198,52 +241,15 @@ const getPortfolioData = (stocks: Stock[]): PortfolioData => {
       totalReturnPercent: ((newStock.currentPrice - newStock.averagePrice) / newStock.averagePrice) * 100
     };
 
-    const updatedStocks = [...stocks, completeNewStock];
-    const newTotalValue = updatedStocks.reduce((sum, s) => sum + s.marketValue, 0);
-    const newTotalCost = updatedStocks.reduce((sum, s) => sum + (s.averagePrice * s.shares), 0);
-    const newTotalReturn = newTotalValue - newTotalCost;
-    const newTotalReturnPercent = (newTotalReturn / newTotalCost) * 100;
-    const newDayChange = updatedStocks.reduce((sum, s) => sum + s.dayChange, 0);
-    const newDayChangePercent = (newDayChange / (newTotalValue - newDayChange)) * 100;
-    console.log("updatedStocks:", updatedStocks);
-    setStocks(updatedStocks);
+    setStocks((prevStocks) => [...prevStocks, completeNewStock]);
 
     const userHoldingsService = new UserHoldingsService(userId!);
 
     await userHoldingsService.addUserHolding(newStock);
-
-    setPortfolioData({
-      ...portfolioData,
-      totalValue: newTotalValue,
-      totalCost: newTotalCost,
-      totalReturn: newTotalReturn,
-      totalReturnPercent: newTotalReturnPercent,
-      dayChange: newDayChange,
-      dayChangePercent: newDayChangePercent,
-      stocks: updatedStocks
-    });
   };
 
   const handleRemoveStock = (stockId: string) => {
-    const updatedStocks = portfolioData!.stocks.filter(stock => stock.id !== stockId);
-    const newTotalValue = updatedStocks.reduce((sum, s) => sum + s.marketValue, 0);
-    const newTotalCost = updatedStocks.reduce((sum, s) => sum + (s.averagePrice * s.shares), 0);
-    const newTotalReturn = newTotalValue - newTotalCost;
-    const newTotalReturnPercent = newTotalCost > 0 ? (newTotalReturn / newTotalCost) * 100 : 0;
-    const newDayChange = updatedStocks.reduce((sum, s) => sum + s.dayChange, 0);
-    const newDayChangePercent = newTotalValue > 0 ? (newDayChange / (newTotalValue - newDayChange)) * 100 : 0;
-
-    setStocks(updatedStocks);
-    setPortfolioData({
-      ...portfolioData,
-      totalValue: newTotalValue,
-      totalCost: newTotalCost,
-      totalReturn: newTotalReturn,
-      totalReturnPercent: newTotalReturnPercent,
-      dayChange: newDayChange,
-      dayChangePercent: newDayChangePercent,
-      stocks: updatedStocks
-    });
+    setStocks((prevStocks) => prevStocks.filter((stock) => stock.id !== stockId));
   };
 
   return (
