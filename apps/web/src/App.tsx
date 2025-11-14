@@ -5,6 +5,7 @@ import { Analytics } from './components/Analytics';
 import { History } from './components/History';
 import { LandingPage } from './components/LandingPage';
 import { getCurrentUser } from './auth/login';
+import { ChatbotWidget } from './components/ChatbotWidget';
 
 export default function App() {
 
@@ -93,6 +94,7 @@ export default function App() {
       <main className="container mx-auto px-4 py-6">
         {renderContent()}
       </main>
+      <ChatbotWidget />
     </div>
   );
 }
