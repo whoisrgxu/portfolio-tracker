@@ -1,10 +1,11 @@
 // api/Stock.ts
 import {StockInfo} from "../Types/StockInfo";
-export class Stock {
+export class StockInfoService {
   public symbol: string;
   public info: StockInfo | null = null;
   public price: number | null = null;
-
+  public dayChange: number | null = null;
+  public dayChangePercent: number | null = null;
   private baseUrl: string;
 
   constructor(symbol: string, baseUrl: string = (import.meta as any)?.env?.VITE_API_URL ||
@@ -15,7 +16,7 @@ export class Stock {
 
   async fetchInfo(): Promise<void> {
     try {
-      const res = await fetch(`${this.baseUrl}/search/${this.symbol}`);
+      const res = await fetch(`${this.baseUrl}/quotes/search/${this.symbol}`);
       if (!res.ok) throw new Error("Failed to fetch info");
       const data = await res.json();
       console.log("Fetched stock info:", data);
@@ -25,18 +26,20 @@ export class Stock {
     }
   }
 
-  async fetchPrice(): Promise<void> {
+  async fetchPriceAndChange(): Promise<void> {
     try {
-      const res = await fetch(`${this.baseUrl}/quote?symbol=${this.symbol}`);
+      const res = await fetch(`${this.baseUrl}/quotes?symbol=${this.symbol}`);
       if (!res.ok) throw new Error("Failed to fetch price");
       const data = await res.json();
       this.price = data.price;
+      this.dayChange = data.day_change;
+      this.dayChangePercent = data.day_change_percent;
     } catch (error) {
       console.error("Error fetching stock price:", error);
     }
   }
 
   async fetchAll(): Promise<void> {
-    await Promise.all([this.fetchInfo(), this.fetchPrice()]);
+    await Promise.all([this.fetchInfo(), this.fetchPriceAndChange()]);
   }
 }

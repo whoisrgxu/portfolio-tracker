@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger 
 } from './ui/dropdown-menu';
 import { MoreHorizontal, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
-import { Stock } from './Dashboard';
+import { Stock } from '../Types/StockHoldingsInfo';
 
 interface HoldingsTableProps {
   stocks: Stock[];
@@ -18,6 +18,7 @@ interface HoldingsTableProps {
 }
 
 export function HoldingsTable({ stocks, onRemoveStock }: HoldingsTableProps) {
+  console.log("HoldingsTable received stocks:", stocks);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -27,7 +28,10 @@ export function HoldingsTable({ stocks, onRemoveStock }: HoldingsTableProps) {
   };
 
   const formatPercent = (percent: number) => {
-    return `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`;
+    if (percent === undefined || percent === null || isNaN(percent)) {
+      return "--";
+    }
+    return `${percent.toFixed(2)}%`;
   };
 
   return (

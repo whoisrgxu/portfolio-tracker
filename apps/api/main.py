@@ -3,7 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
+from routes import portfolio
+from services.live_prices import price_stream_manager
 
+import time
+time.sleep(12)  # Between requests
 # Load env variables
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -20,11 +24,28 @@ app.add_middleware(
 )
 
 # Routers
-from routes import holdings, quotes, health
+from routes import quotes, holdings, health, stream, chatbot
 
-app.include_router(holdings.router, tags=["Holdings"])
-app.include_router(quotes.router, tags=["Quotes"])
-app.include_router(health.router, tags=["Health"])
+app.include_router(holdings.router, prefix="/holdings", tags=["Holdings"])
+app.include_router(quotes.router, prefix="/quotes", tags=["Quotes"])
+app.include_router(health.router, prefix="/health", tags=["Health"])
+app.include_router(portfolio.router, prefix="/portfolio")
+app.include_router(stream.router, prefix="/stream", tags=["Stream"])
+app.include_router(chatbot.router, prefix="/chatbot", tags=["Chatbot"])
+
+
+@app.on_event("startup")
+async def start_streaming():
+    # Spawn the Finnhub stream bridge as soon as the API process is ready.
+    await price_stream_manager.start()
+
+
+@app.on_event("shutdown")
+async def stop_streaming():
+    await price_stream_manager.stop()
+
+
+
 
 # from fastapi import FastAPI, HTTPException
 # from fastapi.middleware.cors import CORSMiddleware

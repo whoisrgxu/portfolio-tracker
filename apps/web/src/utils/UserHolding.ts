@@ -2,26 +2,28 @@
 class UserHoldingsService {
 
     private userId: string;
-
-    constructor(userId: string) {
+    private baseUrl: string;
+    constructor(userId: string, baseUrl: string = (import.meta as any)?.env?.VITE_API_URL ||
+  "http://localhost:8000") {
         this.userId = userId;
+        this.baseUrl = baseUrl;
     }
 
     async getUserHoldings() {
-        const response = await fetch(`/api/holdings?userId=${this.userId}`);
+        const response = await fetch(`${this.baseUrl}/holdings?user_id=${this.userId}`);
         if (!response.ok) {
             throw new Error('Failed to fetch user holdings');
         }
         return response.json();
     }
 
-    async addUserHolding(holding: { symbol: string; shares: number; avgCost: number; currency?: "USD" | "CAD"; }) {
-        const response = await fetch(`/api/holdings`, {
+    async addUserHolding(holding: { symbol: string; shares: number; averagePrice: number;}) {
+        const response = await fetch(`${this.baseUrl}/holdings?user_id=${this.userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ userId: this.userId, ...holding }),
+            body: JSON.stringify({symbol: holding.symbol, quantity: holding.shares, avg_cost: holding.averagePrice}),
         });
         if (!response.ok) {
             throw new Error('Failed to add user holding');
@@ -30,7 +32,7 @@ class UserHoldingsService {
     }
 
     async removeUserHolding(holdingId: string) {
-        const response = await fetch(`/api/holdings/${holdingId}`, {
+        const response = await fetch(`api/holdings/${holdingId}`, {
             method: 'DELETE',
         });
         if (!response.ok) {
@@ -40,7 +42,7 @@ class UserHoldingsService {
     }
 
     async updateUserHolding(holdingId: string, updates: { shares?: number; avgCost?: number; currentPrice?: number; dayChange?: number; dayChangePercent?: number; }) {
-        const response = await fetch(`/api/holdings/${holdingId}`, {
+        const response = await fetch(`api/holdings/${holdingId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -54,7 +56,7 @@ class UserHoldingsService {
     }
 
     async getUserHolding(holdingId: string) {
-        const response = await fetch(`/api/holdings/${holdingId}`);
+        const response = await fetch(`api/holdings/${holdingId}`);
         if (!response.ok) {
             throw new Error('Failed to fetch user holding');
         }

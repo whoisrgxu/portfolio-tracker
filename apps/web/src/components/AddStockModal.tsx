@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Stock } from './Dashboard';
-import { Stock as StockObj } from '../utils/Stock';
+import { Stock } from '../Types/StockHoldingsInfo';
+import { StockInfoService as StockObj } from '../utils/Stock';
 
 interface AddStockModalProps {
   isOpen: boolean;
@@ -19,7 +19,17 @@ type StockSuggestion = {
   currentPrice: number;
 };
 
-const stockSuggestions: StockSuggestion[] = [];
+// Mock stock suggestions for fallback
+const mockStockSuggestions: StockSuggestion[] = [
+  { symbol: 'AAPL', name: 'Apple Inc.', currentPrice: 173.50 },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', currentPrice: 142.30 },
+  { symbol: 'MSFT', name: 'Microsoft Corporation', currentPrice: 378.85 },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.', currentPrice: 155.20 },
+  { symbol: 'TSLA', name: 'Tesla Inc.', currentPrice: 248.50 },
+  { symbol: 'META', name: 'Meta Platforms Inc.', currentPrice: 320.15 },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation', currentPrice: 875.30 },
+  { symbol: 'NFLX', name: 'Netflix Inc.', currentPrice: 485.20 }
+];
 
 export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProps) {
   const [symbol, setSymbol] = useState('');
@@ -29,32 +39,111 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
   const [currentPrice, setCurrentPrice] = useState('');
   // const [dayChange, setDayChange] = useState('');
   // const [dayChangePercent, setDayChangePercent] = useState('');
-  const [suggestions, setSuggestions] = useState<typeof stockSuggestions>([]);
+  const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestRequestRef = useRef(0);
 
-  const handleSymbolConfirmed = (value: string) => {
-    // setSymbol(value.toUpperCase());
-    if (value.length > 0) {
-      // fetch stock info from API  
-      let stock = new StockObj(value);
-      stock.fetchAll().then(() => {
-        if (stock.info && stock.price) {
-          setSuggestions([{symbol: stock.symbol, name: stock.info.description, currentPrice: stock.price}]);
+  const fetchSuggestions = useCallback(async (value: string) => {
+    const trimmedValue = value.trim();
+    console.log('fetchSuggestions called with:', trimmedValue);
+
+    if (!trimmedValue) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const requestId = ++latestRequestRef.current;
+
+    // First try to get real data from API
+    const stock = new StockObj(trimmedValue);
+    try {
+      console.log('Fetching stock data for:', trimmedValue);
+      await stock.fetchAll();
+
+      if (latestRequestRef.current !== requestId) {
+        console.log('Request cancelled, latest request ID:', latestRequestRef.current, 'current request ID:', requestId);
+        return;
+      }
+
+      console.log('Stock data fetched:', { info: stock.info, price: stock.price });
+
+      if (stock.info && stock.price) {
+        const suggestion = {
+          symbol: stock.symbol.toUpperCase(),
+          name: stock.info.description,
+          currentPrice: stock.price,
+        };
+        console.log('Setting suggestion:', suggestion);
+        setSuggestions([suggestion]);
+        setShowSuggestions(true);
+        setName(suggestion.name);
+        setCurrentPrice(suggestion.currentPrice.toString());
+      } else {
+        console.log('No valid stock data found, trying mock data');
+        // Fallback to mock data
+        const mockSuggestions = mockStockSuggestions.filter(s => 
+          s.symbol.toLowerCase().includes(trimmedValue.toLowerCase()) ||
+          s.name.toLowerCase().includes(trimmedValue.toLowerCase())
+        );
+        if (mockSuggestions.length > 0) {
+          console.log('Using mock suggestions:', mockSuggestions);
+          setSuggestions(mockSuggestions);
           setShowSuggestions(true);
         } else {
-          alert("Stock symbol not found.");
+          setSuggestions([]);
+          setShowSuggestions(false);
         }
-      });
-      // const filtered = stockSuggestions.filter(stock => 
-      //   stock.symbol.toLowerCase().includes(value.toLowerCase()) ||
-      //   stock.name.toLowerCase().includes(value.toLowerCase())
-      // );
-    } else {
-      setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error fetching stock data, using mock data:', error);
+      if (latestRequestRef.current === requestId) {
+        // Fallback to mock data when API fails
+        const mockSuggestions = mockStockSuggestions.filter(s => 
+          s.symbol.toLowerCase().includes(trimmedValue.toLowerCase()) ||
+          s.name.toLowerCase().includes(trimmedValue.toLowerCase())
+        );
+        if (mockSuggestions.length > 0) {
+          console.log('Using mock suggestions as fallback:', mockSuggestions);
+          setSuggestions(mockSuggestions);
+          setShowSuggestions(true);
+        } else {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }
     }
-  };
+  }, []);
 
-  const handleSuggestionClick = (suggestion: typeof stockSuggestions[0]) => {
+  useEffect(() => {
+    console.log('useEffect triggered, symbol:', symbol);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!symbol.trim()) {
+      console.log('Symbol is empty, clearing suggestions');
+      setSuggestions([]);
+      setShowSuggestions(false);
+      searchTimeoutRef.current = null;
+      return;
+    }
+
+    console.log('Setting timeout to fetch suggestions for:', symbol);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchSuggestions(symbol);
+    }, 400);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = null;
+      }
+    };
+  }, [symbol, fetchSuggestions]);
+
+  const handleSuggestionClick = (suggestion: StockSuggestion) => {
     setSymbol(suggestion.symbol);
     setName(suggestion.name);
     setCurrentPrice(suggestion.currentPrice.toString());
@@ -73,9 +162,10 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     if (!symbol || !name || !shares || !averagePrice || !currentPrice) {
       return;
     }
+    console.log("Adding stock:", {symbol, name, shares, averagePrice, currentPrice});
 
     onAddStock({
-      symbol,
+      symbol: symbol.toUpperCase(),
       name,
       shares: parseFloat(shares),
       averagePrice: parseFloat(averagePrice),
@@ -95,6 +185,7 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
     setShowSuggestions(false);
     
     onClose();
+    console.log("Stock added and modal closed.");
   };
 
   const handleClose = () => {
@@ -127,22 +218,23 @@ export function AddStockModal({ isOpen, onClose, onAddStock }: AddStockModalProp
               id="symbol"
               placeholder="e.g., AAPL"
               value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSymbolConfirmed(symbol);
+                  e.preventDefault();
+                  if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                    searchTimeoutRef.current = null;
+                  }
+                  if (suggestions[0]) {
+                    handleSuggestionClick(suggestions[0]);
+                  } else {
+                    fetchSuggestions(symbol);
+                  }
                 }
               }}
               required
               />
-              <Button
-              type="button"
-              onClick={() => handleSymbolConfirmed(symbol)}
-              className="ml-2"
-              >
-              ↵
-              </Button>
             </div>
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">

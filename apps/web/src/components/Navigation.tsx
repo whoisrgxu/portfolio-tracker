@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
@@ -21,20 +21,58 @@ import {
   History,
   Bell
 } from 'lucide-react';
+import {SignUpModal} from "./SignUpModal";
+import { LoginModal } from './LoginModal';
+import { getCurrentUser, logout } from '../auth/login';
 
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  isAuthenticated: boolean;
+  onAuthChange: () => void;
+  onLoginClick?: number;
+  onSignUpClick?: number;
 }
 
-export function Navigation({ activeTab, onTabChange }: NavigationProps) {
-  // Mock authentication state - in a real app this would come from auth context/state
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [user] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'
-  });
+export function Navigation({ activeTab, onTabChange, isAuthenticated, onAuthChange, onLoginClick, onSignUpClick }: NavigationProps) {
+  // Login or Register modal state
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string | undefined>("");
+  const [email, setEmail] = useState<string | undefined>("");
+  
+  useEffect(() => {
+    const checkSession = async () => {
+      const { user } = await getCurrentUser();
+      if (user) {
+        setDisplayName(user.user_metadata.display_name ?? "User");
+        setEmail(user.email);
+      }
+    };
+    if (isAuthenticated) {
+      checkSession();
+    }
+  }, [isAuthenticated]);
+
+  // Handle external login/signup triggers
+  useEffect(() => {
+    if (onLoginClick && onLoginClick > 0) {
+      setLoginModalOpen(true);
+    }
+  }, [onLoginClick]);
+
+  useEffect(() => {
+    if (onSignUpClick && onSignUpClick > 0) {
+      setRegisterModalOpen(true);
+    }
+  }, [onSignUpClick]);
+
+  const handleLoginSuccess = async () => {
+    setLoginModalOpen(false);
+    onAuthChange(); // Refresh authentication state
+  };
+
+  const avatar: string = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face';
 
   const navigationTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -43,14 +81,17 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
     { id: 'history', label: 'History', icon: History },
   ];
 
-  const handleLogin = () => {
-    // Mock login - in a real app this would trigger actual authentication
-    setIsAuthenticated(true);
+  const handleLogin = ()=> {
+    setLoginModalOpen(true);
   };
 
-  const handleLogout = () => {
-    // Mock logout - in a real app this would clear auth state
-    setIsAuthenticated(false);
+  const handleSignUpClick = () => {
+    setRegisterModalOpen(true);
+  };
+
+  const handleLogout = async() => {
+    await logout();
+    onAuthChange(); // Refresh authentication state
   };
 
   const AuthenticatedMenu = () => (
@@ -66,17 +107,17 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <AvatarImage src={avatar} alt={displayName} />
+              <AvatarFallback>{displayName?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <p className="text-sm font-medium leading-none">{displayName}</p>
               <p className="text-xs leading-none text-muted-foreground">
-                {user.email}
+                {email}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -104,13 +145,14 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
       <Button variant="ghost" size="sm" onClick={handleLogin}>
         Login
       </Button>
-      <Button size="sm" onClick={handleLogin}>
+      <Button size="sm" onClick={handleSignUpClick}>
         Register
       </Button>
     </div>
   );
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         {/* Logo */}
@@ -190,5 +232,16 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
         </div>
       </div>
     </header>
+    <SignUpModal
+      isOpen={registerModalOpen}
+      onClose={() => setRegisterModalOpen(false)}
+        // You can hook into Supabase or your API here
+    />
+    <LoginModal
+      isOpen={loginModalOpen}
+      onClose={() => setLoginModalOpen(false)}
+      onLoginSuccess={handleLoginSuccess}
+    />
+    </>
   );
 }
