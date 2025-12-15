@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from routes import portfolio
 from services.live_prices import price_stream_manager
-
+import os
 import time
 time.sleep(12)  # Between requests
 # Load env variables
