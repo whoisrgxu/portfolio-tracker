@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+websockets
+sqlalchemy
+pandas
+requests
+finnhub-python
+python-dotenv
+google-genai
