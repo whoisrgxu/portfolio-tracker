@@ -104,7 +104,7 @@ export function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex flex-col items-end justify-end gap-3">
+    <div className="fixed inset-y-0 right-0 z-50 flex w-fit flex-col items-end justify-end gap-3 pointer-events-none">
       <div
         className="pointer-events-auto flex h-[min(90vh,calc(100vh-2rem))] w-[clamp(320px,26vw,440px)] min-w-[320px] flex-col overflow-hidden rounded-l-2xl border border-border bg-background shadow-2xl transition-transform duration-300 ease-out"
         style={{
