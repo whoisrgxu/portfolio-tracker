@@ -84,9 +84,12 @@ export function HoldingsTable({ stocks, onRemoveStock }: HoldingsTableProps) {
                       }`}>
                         {formatCurrency(stock.dayChange)}
                       </span>
-                      <Badge 
-                        variant={stock.dayChangePercent >= 0 ? "default" : "destructive"}
-                        className="text-xs"
+                      <Badge
+                        className={`text-xs flex items-center gap-1 px-2 py-0.5 ${
+                          stock.dayChangePercent >= 0
+                            ? 'bg-green-500 text-green-800'
+                            : 'bg-red-500 text-red-700'
+                        }`}
                       >
                         {formatPercent(stock.dayChangePercent)}
                       </Badge>
@@ -99,14 +102,17 @@ export function HoldingsTable({ stocks, onRemoveStock }: HoldingsTableProps) {
                       }`}>
                         {formatCurrency(stock.totalReturn)}
                       </span>
-                      <Badge 
-                        variant={stock.totalReturnPercent >= 0 ? "default" : "destructive"}
-                        className="text-xs"
+                      <Badge
+                        className={`text-xs flex items-center gap-1 px-2 py-0.5 ${
+                          stock.totalReturnPercent >= 0
+                            ? 'bg-green-500 text-green-800'
+                            : 'bg-red-500 text-red-700'
+                        }`}
                       >
                         {stock.totalReturnPercent >= 0 ? (
-                          <TrendingUp className="h-3 w-3 mr-1" />
+                          <TrendingUp className="h-3 w-3" />
                         ) : (
-                          <TrendingDown className="h-3 w-3 mr-1" />
+                          <TrendingDown className="h-3 w-3" />
                         )}
                         {formatPercent(stock.totalReturnPercent)}
                       </Badge>
