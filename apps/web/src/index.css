@@ -65,6 +65,41 @@
   }
 }
 
+.chatbot-glow {
+  position: relative;
+  padding: 4px;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 45deg,
+    #7c3aed,
+    #22d3ee,
+    #10b981,
+    #fbbf24,
+    #fb7185,
+    #6366f1,
+    #7c3aed
+  );
+  background-size: 300% 300%;
+  animation: chatbot-border 4s linear infinite;
+  box-shadow: 0 12px 35px rgba(116, 71, 193, 0.25);
+}
+
+.chatbot-glow button {
+  border-radius: 9999px;
+}
+
+@keyframes chatbot-border {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 @layer theme {
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
