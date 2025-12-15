@@ -18,7 +18,7 @@ app = FastAPI(title="Portfolio API")
 frontend_origins = [
     "http://localhost:5173",
     "http://localhost:3000",
-    "portfolio-tracker-web-indol.vercel.app"
+    "https://portfolio-tracker-web-indol.vercel.app"
 ]
 
 # Allow additional origins from env (comma-separated), e.g. Vercel/Render frontend URLs
