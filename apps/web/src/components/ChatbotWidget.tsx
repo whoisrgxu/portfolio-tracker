@@ -17,6 +17,7 @@ interface ChatMessage {
 const API_BASE_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? 'http://localhost:8000';
 
+// Keep if you want to send it later; currently unused in your fetch.
 const SYSTEM_PROMPT =
   'You are Gemini Flash Lite embedded in a personal portfolio tracker. ' +
   'Provide concise, actionable answers about stocks, ETFs, and investing. ' +
@@ -48,9 +49,7 @@ export function ChatbotWidget() {
   };
 
   const handleSubmit = async () => {
-    if (!inputValue.trim() || isLoading) {
-      return;
-    }
+    if (!inputValue.trim() || isLoading) return;
 
     const question = inputValue.trim();
     const userMessage: ChatMessage = {
@@ -67,9 +66,7 @@ export function ChatbotWidget() {
     try {
       const response = await fetch(`${API_BASE_URL}/chatbot/query`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question }),
       });
 
@@ -104,105 +101,111 @@ export function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-fit flex-col items-end justify-end gap-3 pointer-events-none">
-      <div
-        className="pointer-events-auto flex h-[min(90vh,calc(100vh-2rem))] w-[clamp(320px,26vw,440px)] min-w-[320px] flex-col overflow-hidden rounded-l-2xl border border-border bg-background shadow-2xl transition-transform duration-300 ease-out"
-        style={{
-          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          willChange: 'transform',
-          pointerEvents: isOpen ? 'auto' : 'none',
-        }}
-      >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-blue-600" />
-            <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Gemini Stock Assistant
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleToggle}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <ScrollArea className="flex-1 min-h-0 px-4 py-4 overflow-y-auto">
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn('flex w-full', {
-                  'justify-end': message.role === 'user',
-                  'justify-start': message.role === 'assistant',
-                })}
-              >
-                <div
-                  className={cn(
-                    'rounded-2xl border px-4 py-3 text-sm shadow-sm',
-                    message.role === 'user'
-                      ? 'max-w-[80%] bg-blue-600 text-blue-50'
-                      : 'max-w-[85%] bg-muted text-muted-foreground',
-                  )}
-                >
-                  {message.content}
-                </div>
-              </div>
-            ))}
-            <div ref={scrollRef} />
-          </div>
-        </ScrollArea>
-
-        <div className="border-t border-border px-4 py-3">
-          {error && (
-            <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
-              {error}
-            </p>
-          )}
-          <Textarea
-            placeholder="Ask about stocks, sectors, or trends..."
-            value={inputValue}
-            onChange={(event) => setInputValue(event.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={3}
-            disabled={isLoading}
-          />
-          <div className="mt-3 flex justify-end">
+    <>
+      {/* Sliding panel (only interactive when open) */}
+      <div className="fixed inset-y-0 right-0 z-50 flex items-end justify-end pointer-events-none">
+        <div
+          className="pointer-events-auto flex h-[min(90vh,calc(100vh-2rem))] w-[clamp(320px,26vw,440px)] min-w-[320px] flex-col overflow-hidden rounded-l-2xl border border-border bg-background shadow-2xl transition-transform duration-300 ease-out"
+          style={{
+            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+            willChange: 'transform',
+            pointerEvents: isOpen ? 'auto' : 'none',
+          }}
+        >
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Gemini Stock Assistant
+              </span>
+            </div>
             <Button
-                className='mt-2'
-              onClick={handleSubmit}
-              disabled={isLoading || !inputValue.trim()}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleToggle}
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Thinking...
-                </>
-              ) : (
-                <>
-                  Send
-                  <Send className="ml-2 h-4 w-4" />
-                </>
-              )}
+              <X className="h-4 w-4" />
             </Button>
           </div>
+
+          <ScrollArea className="flex-1 min-h-0 px-4 py-4 overflow-y-auto">
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn('flex w-full', {
+                    'justify-end': message.role === 'user',
+                    'justify-start': message.role === 'assistant',
+                  })}
+                >
+                  <div
+                    className={cn(
+                      'rounded-2xl border px-4 py-3 text-sm shadow-sm',
+                      message.role === 'user'
+                        ? 'max-w-[80%] bg-blue-600 text-blue-50'
+                        : 'max-w-[85%] bg-muted text-muted-foreground',
+                    )}
+                  >
+                    {message.content}
+                  </div>
+                </div>
+              ))}
+              <div ref={scrollRef} />
+            </div>
+          </ScrollArea>
+
+          <div className="border-t border-border px-4 py-3">
+            {error && (
+              <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
+                {error}
+              </p>
+            )}
+            <Textarea
+              placeholder="Ask about stocks, sectors, or trends..."
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={3}
+              disabled={isLoading}
+            />
+            <div className="mt-3 flex justify-end">
+              <Button
+                className="mt-2"
+                onClick={handleSubmit}
+                disabled={isLoading || !inputValue.trim()}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Thinking...
+                  </>
+                ) : (
+                  <>
+                    Send
+                    <Send className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="chatbot-glow pointer-events-auto mb-4 mr-4 sm:mb-6 sm:mr-6">
-        <Button
-          size="lg"
-          onClick={handleToggle}
-          variant="default"
-          className="relative z-10 flex items-center gap-2 rounded-full px-5 py-6 shadow-xl focus-visible:ring-offset-2"
-        >
-          <MessageCircle className="h-5 w-5" />
-          {isOpen ? 'Close assistant' : 'Ask about stocks'}
-        </Button>
+      {/* Floating button with glow restored */}
+      <div className="fixed bottom-4 right-4 z-50 pointer-events-auto sm:bottom-6 sm:right-6">
+        <div className="chatbot-glow">
+          <Button
+            size="lg"
+            onClick={handleToggle}
+            variant="default"
+            className="relative z-10 flex items-center gap-2 rounded-full px-5 py-6 shadow-xl focus-visible:ring-offset-2"
+          >
+            {!isOpen && <MessageCircle className="h-5 w-5" />}
+            {isOpen ? '' : 'Ask about stocks'}
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
