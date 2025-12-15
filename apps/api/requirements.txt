@@ -7,3 +7,4 @@ requests
 finnhub-python
 python-dotenv
 google-genai
+psycopg2-binary
